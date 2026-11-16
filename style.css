@@ -38,7 +38,7 @@ a {
   text-decoration: none;
 }
 
-/* ---------- Navigazione (fissa, ai quattro lati) ---------- */
+/* ---------- Navigazione (fissa, ai quattro angoli) ---------- */
 .nav__link {
   position: fixed;
   z-index: 10;
@@ -51,10 +51,10 @@ a {
   opacity: 0.55;
 }
 
-.nav__link--tl { top: var(--margin);  left: var(--margin); }
-.nav__link--tr { top: var(--margin);  right: var(--margin); }
-.nav__link--ml { top: 50%; left: var(--margin);  transform: translateY(-50%); }
-.nav__link--mr { top: 50%; right: var(--margin); transform: translateY(-50%); }
+.nav__link--tl { top: var(--margin);    left: var(--margin); }
+.nav__link--tr { top: var(--margin);    right: var(--margin); }
+.nav__link--ml { bottom: var(--margin); left: var(--margin); }   /* Progetti */
+.nav__link--mr { bottom: var(--margin); right: var(--margin); }  /* IG */
 
 /* ---------- Hero ---------- */
 .hero {
