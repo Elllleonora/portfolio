@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progetti – Eleonora Olivieri</title>
+  <meta name="description" content="Progetti di Eleonora Olivieri, graphic service designer.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-projects">
+
+  <header class="nav">
+    <a class="nav__link nav__link--tl" href="#">Su di me</a>
+    <a class="nav__link nav__link--tr" href="index.html#contatti">Contatti</a>
+    <a class="nav__link nav__link--ml is-active" href="progetti.html" aria-current="page">Progetti</a>
+    <a class="nav__link nav__link--mr" href="https://www.instagram.com/ciano_tipe/" target="_blank" rel="noopener">IG</a>
+  </header>
+
+  <main class="project-page">
+    <h1 class="visually-hidden">Progetti</h1>
+
+    <!-- Elenco progetti (riempito da script.js) -->
+    <ul class="project-list" aria-label="Elenco progetti"></ul>
+
+    <section class="project-detail">
+      <div class="project-head">
+        <h2 class="project-title"></h2>
+        <div class="project-description"></div>
+      </div>
+
+      <p class="project-summary"></p>
+
+      <!-- Foto impilate (riempite da script.js) -->
+      <div class="stack" role="button" tabindex="0" aria-label="Sfoglia le immagini del progetto" hidden></div>
+    </section>
+  </main>
+
+  <noscript>
+    <p style="padding: 6rem 26px;">Per vedere i progetti è necessario attivare JavaScript.</p>
+  </noscript>
+
+  <script src="script.js"></script>
+</body>
+</html>
