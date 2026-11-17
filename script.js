@@ -34,12 +34,15 @@ if (cols.length) {
    ========================================================= */
 
 // Nome della cartella su GitHub dove carichi le foto.
-// Se la tua cartella si chiama diversamente (es. "omg"), cambialo qui.
 const IMG_FOLDER = "img";
 
+// Estensioni provate in automatico quando nell'elenco "images"
+// scrivi il nome senza estensione (es. "gramma-1").
+const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "JPG", "JPEG", "PNG", "WEBP"];
+
 // Contenuti dei progetti. Per aggiungere o modificare un progetto
-// basta cambiare questo elenco. Le foto vanno scritte come nome file
-// (es. "gramma-1.jpg") e devono essere dentro la cartella IMG_FOLDER.
+// basta cambiare questo elenco. Nelle foto puoi scrivere il nome
+// senza estensione ("gramma-1") oppure con ("gramma-1.png").
 const PROJECTS = [
   {
     id: "gramma",
@@ -52,7 +55,7 @@ const PROJECTS = [
     ],
     summary:
       "Gramma ingaggia i cittadini riminesi attraverso il suono e i partner del progetto, che li invitano a prendere parte ad una cura collettiva, alimentata dal cammino e dall’ascolto attivo, delle specie a rischio che vivono nelle nostre città.",
-    images: ["gramma-1.jpg", "gramma-2.jpg", "gramma-3.jpg", "gramma-4.jpg"]
+    images: ["gramma-1", "gramma-2", "gramma-3", "gramma-4"]
   },
   {
     id: "vocabolante",
@@ -88,6 +91,9 @@ const PROJECTS = [
   }
 ];
 
+// Quante foto restano visibili nella pila
+const VISIBLE_CARDS = 5;
+
 function initProjects(page) {
   const listEl = page.querySelector(".project-list");
   const titleEl = page.querySelector(".project-title");
@@ -95,8 +101,9 @@ function initProjects(page) {
   const summaryEl = page.querySelector(".project-summary");
   const stackEl = page.querySelector(".stack");
 
-  let order = [];   // carte della pila, dalla prima (davanti) all'ultima
-  let token = 0;    // evita che un progetto vecchio sovrascriva quello nuovo
+  let order = [];        // carte della pila, dalla prima (davanti) all'ultima
+  let token = 0;         // evita che un progetto vecchio sovrascriva quello nuovo
+  let animating = false; // blocca i clic durante l'animazione
 
   // --- Elenco progetti ---
   const buttons = PROJECTS.map((project, i) => {
@@ -113,20 +120,31 @@ function initProjects(page) {
   // --- Pila di foto ---
   function layout() {
     order.forEach((card, depth) => {
-      card.dataset.depth = depth < 4 ? String(depth) : "hidden";
+      card.dataset.depth = depth < VISIBLE_CARDS ? String(depth) : "hidden";
     });
   }
 
   function next() {
-    if (order.length < 2) return;
-    order.push(order.shift());   // la foto davanti va in fondo
-    layout();
+    if (order.length < 2 || animating) return;
+    animating = true;
+
+    const front = order[0];
+    front.classList.add("is-leaving");           // la foto davanti scivola di lato
+
+    setTimeout(() => {
+      front.classList.remove("is-leaving");
+      order.push(order.shift());                 // poi va sotto tutte le altre
+      layout();
+      setTimeout(() => { animating = false; }, 450);
+    }, 260);
   }
 
   function prev() {
-    if (order.length < 2) return;
-    order.unshift(order.pop());  // l'ultima foto torna davanti
+    if (order.length < 2 || animating) return;
+    animating = true;
+    order.unshift(order.pop());                  // l'ultima foto torna davanti
     layout();
+    setTimeout(() => { animating = false; }, 450);
   }
 
   stackEl.addEventListener("click", next);
@@ -140,7 +158,8 @@ function initProjects(page) {
     }
   });
 
-  function imageExists(src) {
+  // Prova a caricare un'immagine; restituisce true/false
+  function tryLoad(src) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(true);
@@ -149,19 +168,32 @@ function initProjects(page) {
     });
   }
 
+  // Trova il file giusto provando le estensioni una dopo l'altra
+  async function resolveImage(name) {
+    const hasExtension = /\.[a-z0-9]+$/i.test(name);
+    const candidates = hasExtension
+      ? [`${IMG_FOLDER}/${name}`]
+      : EXTENSIONS.map((ext) => `${IMG_FOLDER}/${name}.${ext}`);
+
+    for (const src of candidates) {
+      if (await tryLoad(src)) return src;
+    }
+    console.warn(`Immagine non trovata: ${IMG_FOLDER}/${name} (controlla nome ed estensione)`);
+    return null;
+  }
+
   function buildStack(project) {
     const myToken = ++token;
     stackEl.replaceChildren();
     stackEl.hidden = true;
     order = [];
+    animating = false;
 
-    const sources = project.images.map((file) => `${IMG_FOLDER}/${file}`);
+    Promise.all(project.images.map(resolveImage)).then((results) => {
+      if (myToken !== token) return;             // nel frattempo è cambiato progetto
 
-    Promise.all(sources.map(imageExists)).then((results) => {
-      if (myToken !== token) return;            // nel frattempo è cambiato progetto
-
-      const found = sources.filter((_, k) => results[k]);
-      if (!found.length) return;                // nessuna foto: la pila resta nascosta
+      const found = results.filter(Boolean);
+      if (!found.length) return;                 // nessuna foto: la pila resta nascosta
 
       order = found.map((src, k) => {
         const card = document.createElement("div");
