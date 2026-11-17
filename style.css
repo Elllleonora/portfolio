@@ -3,6 +3,7 @@
   --bg: #a98f70;
   --ink: #1c1c1b;
   --muted: #8f8f8f;
+  --hover: #00ff26;                    /* colore delle scritte al passaggio del mouse */
 
   --font-display: "Instrument Serif", "Times New Roman", serif;
   --font-text: "Plus Jakarta Sans", system-ui, sans-serif;
@@ -60,11 +61,11 @@ a {
   z-index: 20;
   font-size: var(--small-size);
   line-height: 1;
-  transition: opacity 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .nav__link:hover {
-  opacity: 0.55;
+  color: var(--hover);
 }
 
 .nav__link--tl { top: var(--margin);    left: var(--margin); }
@@ -130,6 +131,10 @@ a {
   margin-top: 1.1em;
 }
 
+.info__block a {
+  transition: color 0.2s ease;
+}
+
 .info__block a[href="#"],
 .info__block p a:not([href^="tel"]):not([href^="mailto"]) {
   text-decoration: underline;
@@ -138,7 +143,7 @@ a {
 }
 
 .info__block a:hover {
-  opacity: 0.55;
+  color: var(--hover);
 }
 
 /* Animazione di comparsa (attivata da script.js) */
@@ -181,11 +186,11 @@ a {
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .project-list button:hover {
-  opacity: 0.55;
+  color: var(--hover);
 }
 
 /* Freccia davanti al progetto attivo */
