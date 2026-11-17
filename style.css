@@ -158,15 +158,16 @@ a {
   transform: none;
 }
 
-/* ---------- Pagina Progetti ---------- */
+/* ---------- Pagina Progetti (scroll unico) ---------- */
 .project-page {
-  min-height: 100svh;
-  padding: clamp(5rem, 13vh, 9rem) var(--margin) 9rem 41vw;
+  --top-space: clamp(5rem, 13vh, 9rem);   /* spazio sopra l'inizio di ogni progetto */
+
+  padding: var(--top-space) var(--margin) 9rem 41vw;
   font-size: var(--small-size);
   line-height: 1.1;
 }
 
-/* Elenco progetti: in basso a sinistra, sopra "Progetti" */
+/* Menu dei progetti: fisso in basso a sinistra, sopra "Progetti" */
 .project-list {
   position: fixed;
   left: var(--margin);
@@ -193,12 +194,23 @@ a {
   color: var(--hover);
 }
 
-/* Freccia davanti al progetto attivo */
+/* Freccia davanti al progetto che stai guardando */
 .project-list button.is-active::before {
   content: "→";
   position: absolute;
   right: 100%;
   margin-right: 0.35em;
+}
+
+/* Ogni progetto occupa almeno una schermata */
+.project {
+  scroll-margin-top: var(--top-space);
+  min-height: calc(100svh - var(--top-space));
+  margin-bottom: 5rem;
+}
+
+.project:last-child {
+  margin-bottom: 0;
 }
 
 /* Testata del progetto: titolo + descrizione */
@@ -317,12 +329,19 @@ a {
 
   /* Progetti: tutto in colonna */
   .project-page {
-    padding: 6rem var(--margin) 8rem calc(var(--margin) + 1.6em);
+    --top-space: 6rem;
+    padding: var(--top-space) var(--margin) 8rem calc(var(--margin) + 1.6em);
   }
 
   .project-list {
     position: static;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .project {
+    scroll-margin-top: 1.5rem;
+    min-height: 0;
+    margin-bottom: 5rem;
   }
 
   .project-head {
