@@ -36,13 +36,16 @@ if (cols.length) {
 // Nome della cartella su GitHub dove carichi le foto.
 const IMG_FOLDER = "img";
 
-// Estensioni provate in automatico quando nell'elenco "images"
-// scrivi il nome senza estensione (es. "gramma-1").
-const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "avif", "JPG", "JPEG", "PNG", "WEBP"];
+// Estensioni provate in automatico per ogni foto.
+const EXTENSIONS = ["jpg", "png", "jpeg", "webp", "avif", "JPG", "PNG", "JPEG", "WEBP"];
+
+// Numero massimo di foto cercate per progetto.
+const MAX_PHOTOS = 40;
 
 // Contenuti dei progetti. Per aggiungere o modificare un progetto
-// basta cambiare questo elenco. Nelle foto puoi scrivere il nome
-// senza estensione ("gramma-1") oppure con ("gramma-1.png").
+// basta cambiare questo elenco.
+// "imagePrefix": le foto vengono cercate come prefisso-1, prefisso-2, ...
+// (es. gramma-1.jpg, gramma-2.png, gramma-3.jpg ...) nella cartella IMG_FOLDER.
 const PROJECTS = [
   {
     id: "gramma",
@@ -55,7 +58,7 @@ const PROJECTS = [
     ],
     summary:
       "Gramma ingaggia i cittadini riminesi attraverso il suono e i partner del progetto, che li invitano a prendere parte ad una cura collettiva, alimentata dal cammino e dall’ascolto attivo, delle specie a rischio che vivono nelle nostre città.",
-    images: ["gramma-1", "gramma-2", "gramma-3", "gramma-4"]
+    imagePrefix: "gramma"
   },
   {
     id: "vocabolante",
@@ -63,7 +66,7 @@ const PROJECTS = [
     label: ["Tipo di progetto", "Ambito", "Anno"],
     description: ["Descrizione in arrivo."],
     summary: "",
-    images: []
+    imagePrefix: "vocabolante"
   },
   {
     id: "the-evolution-of-our-ecosystems",
@@ -71,7 +74,7 @@ const PROJECTS = [
     label: ["Tipo di progetto", "Ambito", "Anno"],
     description: ["Descrizione in arrivo."],
     summary: "",
-    images: []
+    imagePrefix: "ecosystems"
   },
   {
     id: "arete",
@@ -79,7 +82,7 @@ const PROJECTS = [
     label: ["Tipo di progetto", "Ambito", "Anno"],
     description: ["Descrizione in arrivo."],
     summary: "",
-    images: []
+    imagePrefix: "arete"
   },
   {
     id: "legami-del-futuro",
@@ -87,7 +90,7 @@ const PROJECTS = [
     label: ["Tipo di progetto", "Ambito", "Anno"],
     description: ["Descrizione in arrivo."],
     summary: "",
-    images: []
+    imagePrefix: "legami"
   }
 ];
 
@@ -168,18 +171,32 @@ function initProjects(page) {
     });
   }
 
-  // Trova il file giusto provando le estensioni una dopo l'altra
-  async function resolveImage(name) {
-    const hasExtension = /\.[a-z0-9]+$/i.test(name);
-    const candidates = hasExtension
-      ? [`${IMG_FOLDER}/${name}`]
-      : EXTENSIONS.map((ext) => `${IMG_FOLDER}/${name}.${ext}`);
+  // Cerca la foto "prefisso-numero" provando tutte le estensioni insieme.
+  // Restituisce il percorso del file trovato, oppure null.
+  async function findPhoto(prefix, number) {
+    const sources = EXTENSIONS.map((ext) => `${IMG_FOLDER}/${prefix}-${number}.${ext}`);
+    const results = await Promise.all(sources.map(tryLoad));
+    const index = results.indexOf(true);
+    return index >= 0 ? sources[index] : null;
+  }
 
-    for (const src of candidates) {
-      if (await tryLoad(src)) return src;
+  // Trova tutte le foto di un progetto: prefisso-1, prefisso-2, ...
+  // Si ferma dopo 2 numeri consecutivi mancanti.
+  async function findAllPhotos(prefix, myToken) {
+    const found = [];
+    let misses = 0;
+
+    for (let n = 1; n <= MAX_PHOTOS && misses < 2; n++) {
+      const src = await findPhoto(prefix, n);
+      if (myToken !== token) return [];          // nel frattempo è cambiato progetto
+      if (src) {
+        found.push(src);
+        misses = 0;
+      } else {
+        misses++;
+      }
     }
-    console.warn(`Immagine non trovata: ${IMG_FOLDER}/${name} (controlla nome ed estensione)`);
-    return null;
+    return found;
   }
 
   function buildStack(project) {
@@ -189,11 +206,10 @@ function initProjects(page) {
     order = [];
     animating = false;
 
-    Promise.all(project.images.map(resolveImage)).then((results) => {
-      if (myToken !== token) return;             // nel frattempo è cambiato progetto
+    if (!project.imagePrefix) return;
 
-      const found = results.filter(Boolean);
-      if (!found.length) return;                 // nessuna foto: la pila resta nascosta
+    findAllPhotos(project.imagePrefix, myToken).then((found) => {
+      if (myToken !== token || !found.length) return;
 
       order = found.map((src, k) => {
         const card = document.createElement("div");
