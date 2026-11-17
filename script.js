@@ -42,8 +42,10 @@ const EXTENSIONS = ["jpg", "png", "jpeg", "webp", "avif", "JPG", "PNG", "JPEG", 
 // Numero massimo di foto cercate per progetto.
 const MAX_PHOTOS = 40;
 
-// Contenuti dei progetti. Per aggiungere o modificare un progetto
-// basta cambiare questo elenco.
+// Quante foto restano visibili nella pila
+const VISIBLE_CARDS = 5;
+
+// Contenuti dei progetti, nell'ordine in cui compaiono nella pagina.
 // "imagePrefix": le foto vengono cercate come prefisso-1, prefisso-2, ...
 // (es. gramma-1.jpg, gramma-2.png, gramma-3.jpg ...) nella cartella IMG_FOLDER.
 const PROJECTS = [
@@ -94,33 +96,51 @@ const PROJECTS = [
   }
 ];
 
-// Quante foto restano visibili nella pila
-const VISIBLE_CARDS = 5;
+/* ---------- Ricerca delle foto ---------- */
 
-function initProjects(page) {
-  const listEl = page.querySelector(".project-list");
-  const titleEl = page.querySelector(".project-title");
-  const descEl = page.querySelector(".project-description");
-  const summaryEl = page.querySelector(".project-summary");
-  const stackEl = page.querySelector(".stack");
-
-  let order = [];        // carte della pila, dalla prima (davanti) all'ultima
-  let token = 0;         // evita che un progetto vecchio sovrascriva quello nuovo
-  let animating = false; // blocca i clic durante l'animazione
-
-  // --- Elenco progetti ---
-  const buttons = PROJECTS.map((project, i) => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = project.name;
-    btn.addEventListener("click", () => show(i));
-    li.appendChild(btn);
-    listEl.appendChild(li);
-    return btn;
+// Prova a caricare un'immagine; restituisce true/false
+function tryLoad(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
   });
+}
 
-  // --- Pila di foto ---
+// Cerca la foto "prefisso-numero" provando tutte le estensioni insieme.
+async function findPhoto(prefix, number) {
+  const sources = EXTENSIONS.map((ext) => `${IMG_FOLDER}/${prefix}-${number}.${ext}`);
+  const results = await Promise.all(sources.map(tryLoad));
+  const index = results.indexOf(true);
+  return index >= 0 ? sources[index] : null;
+}
+
+// Trova tutte le foto di un progetto: prefisso-1, prefisso-2, ...
+// Si ferma dopo 2 numeri consecutivi mancanti.
+async function findAllPhotos(prefix) {
+  const found = [];
+  let misses = 0;
+
+  for (let n = 1; n <= MAX_PHOTOS && misses < 2; n++) {
+    const src = await findPhoto(prefix, n);
+    if (src) {
+      found.push(src);
+      misses = 0;
+    } else {
+      misses++;
+    }
+  }
+  return found;
+}
+
+/* ---------- Pila di foto (una per progetto) ---------- */
+
+function createStack(stackEl, project) {
+  let order = [];        // carte della pila, dalla prima (davanti) all'ultima
+  let animating = false; // blocca i clic durante l'animazione
+  let started = false;   // le foto si cercano una sola volta
+
   function layout() {
     order.forEach((card, depth) => {
       card.dataset.depth = depth < VISIBLE_CARDS ? String(depth) : "hidden";
@@ -161,55 +181,13 @@ function initProjects(page) {
     }
   });
 
-  // Prova a caricare un'immagine; restituisce true/false
-  function tryLoad(src) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = src;
-    });
-  }
+  // Cerca e mostra le foto (chiamata quando il progetto sta per entrare nello schermo)
+  function load() {
+    if (started || !project.imagePrefix) return;
+    started = true;
 
-  // Cerca la foto "prefisso-numero" provando tutte le estensioni insieme.
-  // Restituisce il percorso del file trovato, oppure null.
-  async function findPhoto(prefix, number) {
-    const sources = EXTENSIONS.map((ext) => `${IMG_FOLDER}/${prefix}-${number}.${ext}`);
-    const results = await Promise.all(sources.map(tryLoad));
-    const index = results.indexOf(true);
-    return index >= 0 ? sources[index] : null;
-  }
-
-  // Trova tutte le foto di un progetto: prefisso-1, prefisso-2, ...
-  // Si ferma dopo 2 numeri consecutivi mancanti.
-  async function findAllPhotos(prefix, myToken) {
-    const found = [];
-    let misses = 0;
-
-    for (let n = 1; n <= MAX_PHOTOS && misses < 2; n++) {
-      const src = await findPhoto(prefix, n);
-      if (myToken !== token) return [];          // nel frattempo è cambiato progetto
-      if (src) {
-        found.push(src);
-        misses = 0;
-      } else {
-        misses++;
-      }
-    }
-    return found;
-  }
-
-  function buildStack(project) {
-    const myToken = ++token;
-    stackEl.replaceChildren();
-    stackEl.hidden = true;
-    order = [];
-    animating = false;
-
-    if (!project.imagePrefix) return;
-
-    findAllPhotos(project.imagePrefix, myToken).then((found) => {
-      if (myToken !== token || !found.length) return;
+    findAllPhotos(project.imagePrefix).then((found) => {
+      if (!found.length) return;
 
       order = found.map((src, k) => {
         const card = document.createElement("div");
@@ -229,9 +207,106 @@ function initProjects(page) {
     });
   }
 
-  // --- Mostra un progetto ---
-  function show(index, updateHash = true) {
-    const project = PROJECTS[index];
+  return { load };
+}
+
+/* ---------- Costruzione di un progetto ---------- */
+
+function buildProject(project) {
+  const section = document.createElement("section");
+  section.className = "project";
+  section.id = project.id;
+
+  // Testata: titolo + descrizione
+  const head = document.createElement("div");
+  head.className = "project-head";
+
+  const title = document.createElement("h2");
+  title.className = "project-title";
+
+  const hiddenName = document.createElement("span");   // per screen reader
+  hiddenName.className = "visually-hidden";
+  hiddenName.textContent = `${project.name} – `;
+  title.appendChild(hiddenName);
+
+  project.label.filter(Boolean).forEach((line, k) => {
+    if (k) title.appendChild(document.createElement("br"));
+    title.appendChild(document.createTextNode(line));
+  });
+
+  const description = document.createElement("div");
+  description.className = "project-description";
+  project.description.forEach((text) => {
+    const p = document.createElement("p");
+    p.textContent = text;
+    description.appendChild(p);
+  });
+
+  head.append(title, description);
+  section.appendChild(head);
+
+  // Testo grigio sotto la descrizione
+  if (project.summary) {
+    const summary = document.createElement("p");
+    summary.className = "project-summary";
+    summary.textContent = project.summary;
+    section.appendChild(summary);
+  }
+
+  // Foto impilate (nascoste finché non vengono trovate)
+  const stackEl = document.createElement("div");
+  stackEl.className = "stack";
+  stackEl.setAttribute("role", "button");
+  stackEl.tabIndex = 0;
+  stackEl.setAttribute("aria-label", `Sfoglia le immagini di ${project.name}`);
+  stackEl.hidden = true;
+  section.appendChild(stackEl);
+
+  return { section, stack: createStack(stackEl, project) };
+}
+
+/* ---------- Pagina Progetti ---------- */
+
+function initProjects(page) {
+  const listEl = page.querySelector(".project-list");
+  const feedEl = page.querySelector(".project-feed");
+
+  const built = PROJECTS.map(buildProject);
+  const sections = built.map((b) => b.section);
+  built.forEach((b) => feedEl.appendChild(b.section));
+
+  let activeIndex = -1;
+  let locked = false;    // durante lo scroll avviato da un clic sul menu
+  let lockTimer = null;
+
+  // --- Menu ---
+  const buttons = PROJECTS.map((project, i) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = project.name;
+
+    btn.addEventListener("click", () => {
+      locked = true;
+      setActive(i, true);
+      sections[i].scrollIntoView({ behavior: "smooth", block: "start" });
+
+      clearTimeout(lockTimer);
+      lockTimer = setTimeout(() => {
+        locked = false;
+        updateFromScroll();
+      }, 900);
+    });
+
+    li.appendChild(btn);
+    listEl.appendChild(li);
+    return btn;
+  });
+
+  // Evidenzia nel menu il progetto che si sta guardando
+  function setActive(index, updateHash) {
+    if (index === activeIndex) return;
+    activeIndex = index;
 
     buttons.forEach((btn, i) => {
       const active = i === index;
@@ -240,35 +315,64 @@ function initProjects(page) {
       else btn.removeAttribute("aria-current");
     });
 
-    // Titolo (una riga per voce)
-    titleEl.replaceChildren();
-    project.label.filter(Boolean).forEach((line, k) => {
-      if (k) titleEl.appendChild(document.createElement("br"));
-      titleEl.appendChild(document.createTextNode(line));
-    });
-
-    // Descrizione
-    descEl.replaceChildren(
-      ...project.description.map((text) => {
-        const p = document.createElement("p");
-        p.textContent = text;
-        return p;
-      })
-    );
-
-    // Testo grigio sotto la descrizione
-    summaryEl.textContent = project.summary;
-    summaryEl.hidden = !project.summary;
-
-    document.title = `${project.name} – Eleonora Olivieri`;
-    if (updateHash) history.replaceState(null, "", `#${project.id}`);
-
-    buildStack(project);
+    if (updateHash) {
+      history.replaceState(null, "", `#${PROJECTS[index].id}`);
+    }
   }
 
-  // Progetto iniziale: quello indicato nell'indirizzo (#id), altrimenti il primo
+  // Il progetto "attivo" è l'ultimo il cui inizio ha superato il 40% dello schermo
+  function updateFromScroll() {
+    if (locked) return;
+    const line = window.innerHeight * 0.4;
+    let index = 0;
+    sections.forEach((section, i) => {
+      if (section.getBoundingClientRect().top <= line) index = i;
+    });
+    setActive(index, true);
+  }
+
+  let ticking = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        updateFromScroll();
+        ticking = false;
+      });
+    },
+    { passive: true }
+  );
+  window.addEventListener("resize", updateFromScroll);
+
+  // --- Le foto si cercano solo quando il progetto sta per entrare nello schermo ---
+  if ("IntersectionObserver" in window) {
+    const loader = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const i = sections.indexOf(entry.target);
+            built[i].stack.load();
+            loader.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: "400px 0px" }
+    );
+    sections.forEach((section) => loader.observe(section));
+  } else {
+    built.forEach((b) => b.stack.load());
+  }
+
+  // --- Posizione iniziale: se l'indirizzo contiene #progetto, vai lì ---
   const fromHash = PROJECTS.findIndex((p) => `#${p.id}` === location.hash);
-  show(fromHash >= 0 ? fromHash : 0, false);
+  if (fromHash >= 0) {
+    sections[fromHash].scrollIntoView({ behavior: "auto", block: "start" });
+    setActive(fromHash, false);
+  } else {
+    setActive(0, false);
+  }
 }
 
 const projectPage = document.querySelector(".project-page");
