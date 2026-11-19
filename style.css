@@ -233,6 +233,10 @@ a {
   margin: 0;
 }
 
+.project-description p + p {
+  margin-top: 0.6em;
+}
+
 .project-summary {
   max-width: 95%;
   margin-top: 2.6em;
@@ -259,10 +263,12 @@ a {
   outline-offset: 8px;
 }
 
+/* Larghezza e proporzioni di ogni foto sono impostate da script.js
+   in base al formato originale (orizzontale o verticale).
+   left/top indicano il CENTRO della foto. */
 .stack__card {
   position: absolute;
-  width: 62%;
-  aspect-ratio: 1.5 / 1;
+  width: 40%;
   overflow: hidden;
   background: #dcdcdc;
   box-shadow:
@@ -284,18 +290,18 @@ a {
 }
 
 /* Posizione e inclinazione di ogni foto in base alla profondità nella pila */
-.stack__card[data-depth="0"]      { left: 22%; top: 1%;  z-index: 5; transform: rotate(-2deg); }
-.stack__card[data-depth="1"]      { left: 38%; top: 20%; z-index: 4; transform: rotate(4deg); }
-.stack__card[data-depth="2"]      { left: 2%;  top: 12%; z-index: 3; transform: rotate(-5deg); }
-.stack__card[data-depth="3"]      { left: 30%; top: 9%;  z-index: 2; transform: rotate(1.5deg); }
-.stack__card[data-depth="4"]      { left: 10%; top: 27%; z-index: 1; transform: rotate(6deg); }
-.stack__card[data-depth="hidden"] { left: 22%; top: 1%;  z-index: 0; transform: rotate(0deg); opacity: 0; pointer-events: none; }
+.stack__card[data-depth="0"]      { left: 52%; top: 42%; z-index: 5; transform: translate(-50%, -50%) rotate(-2deg); }
+.stack__card[data-depth="1"]      { left: 66%; top: 58%; z-index: 4; transform: translate(-50%, -50%) rotate(4deg); }
+.stack__card[data-depth="2"]      { left: 33%; top: 52%; z-index: 3; transform: translate(-50%, -50%) rotate(-5deg); }
+.stack__card[data-depth="3"]      { left: 60%; top: 48%; z-index: 2; transform: translate(-50%, -50%) rotate(1.5deg); }
+.stack__card[data-depth="4"]      { left: 42%; top: 68%; z-index: 1; transform: translate(-50%, -50%) rotate(6deg); }
+.stack__card[data-depth="hidden"] { left: 52%; top: 42%; z-index: 0; transform: translate(-50%, -50%) rotate(0deg); opacity: 0; pointer-events: none; }
 
 /* La foto davanti scivola via prima di andare sotto le altre */
 .stack .stack__card.is-leaving {
-  left: 56%;
-  top: -3%;
-  transform: rotate(9deg);
+  left: 88%;
+  top: 36%;
+  transform: translate(-50%, -50%) rotate(9deg);
 }
 
 /* ---------- Tablet ---------- */
