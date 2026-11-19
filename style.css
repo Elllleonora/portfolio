@@ -13,7 +13,7 @@
   --small-size: clamp(0.8rem, 1.1vw, 1.5rem);
 }
 
-/* Pagina Progetti: sfondo chiaro */
+/* Pagine interne (Progetti, Su di me): sfondo chiaro */
 .page-projects {
   --bg: #f0f0f0;
   --ink: #111111;
@@ -68,10 +68,10 @@ a {
   color: var(--hover);
 }
 
-.nav__link--tl { top: var(--margin);    left: var(--margin); }
-.nav__link--tr { top: var(--margin);    right: var(--margin); }
-.nav__link--ml { bottom: var(--margin); left: var(--margin); }   /* Progetti */
-.nav__link--mr { bottom: var(--margin); right: var(--margin); }  /* IG */
+.nav__link--tl { top: var(--margin);    left: var(--margin); }    /* Su di me */
+.nav__link--tr { top: var(--margin);    right: var(--margin); }   /* Contatti */
+.nav__link--ml { bottom: var(--margin); left: var(--margin); }    /* Progetti */
+.nav__link--mr { bottom: var(--margin); right: var(--margin); }   /* IG */
 
 /* Sezione in cui ci si trova: sottolineata */
 .nav__link.is-active,
@@ -158,9 +158,10 @@ a {
   transform: none;
 }
 
-/* ---------- Pagina Progetti (scroll unico) ---------- */
-.project-page {
-  --top-space: clamp(5rem, 13vh, 9rem);   /* spazio sopra l'inizio di ogni progetto */
+/* ---------- Pagine Progetti e Su di me: impaginato condiviso ---------- */
+.project-page,
+.about-page {
+  --top-space: clamp(5rem, 13vh, 9rem);   /* spazio sopra l'inizio di ogni sezione */
 
   padding: var(--top-space) var(--margin) 9rem 41vw;
   font-size: var(--small-size);
@@ -213,7 +214,7 @@ a {
   margin-bottom: 0;
 }
 
-/* Testata del progetto: titolo + descrizione */
+/* Testata: titolo a sinistra, testo a destra */
 .project-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
@@ -241,6 +242,55 @@ a {
   max-width: 95%;
   margin-top: 2.6em;
   color: var(--muted);
+}
+
+/* ---------- Pagina Su di me ---------- */
+.about-section {
+  scroll-margin-top: var(--top-space);
+  margin-bottom: 6rem;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Elenco di libri: copertine in miniatura, titolo sopra */
+.book-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 2.4em 1rem;
+  align-items: start;
+}
+
+.book__title {
+  min-height: 3.3em;                   /* titoli su 2-3 righe: le copertine restano allineate */
+  margin-bottom: 0.7em;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.book__title span {
+  display: block;
+  margin-top: 0.15em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.book__cover {
+  aspect-ratio: 2 / 3;
+  background: #dcdcdc;                 /* segnaposto finché la copertina non è caricata */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 6px 16px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.book__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ---------- Foto impilate (come foto di carta) ---------- */
@@ -310,7 +360,8 @@ a {
     padding-inline: 10vw;
   }
 
-  .project-page {
+  .project-page,
+  .about-page {
     padding-left: 38vw;
   }
 }
@@ -333,8 +384,9 @@ a {
     row-gap: 0;
   }
 
-  /* Progetti: tutto in colonna */
-  .project-page {
+  /* Progetti e Su di me: tutto in colonna */
+  .project-page,
+  .about-page {
     --top-space: 6rem;
     padding: var(--top-space) var(--margin) 8rem calc(var(--margin) + 1.6em);
   }
@@ -357,6 +409,14 @@ a {
 
   .project-summary {
     max-width: 100%;
+  }
+
+  .about-section {
+    margin-bottom: 4.5rem;
+  }
+
+  .book-list {
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
   }
 }
 
