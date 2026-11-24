@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Su di me – Eleonora Olivieri</title>
-  <meta name="description" content="Eleonora Olivieri, service e graphic designer: percorso, approccio progettuale, editoria e libri.">
+  <meta name="description" content="Eleonora Olivieri, service e graphic designer: percorso, approccio progettuale, cianotipia, editoria e libri.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,19 +24,30 @@
   <main class="about-page">
     <h1 class="visually-hidden">Su di me</h1>
 
-    <!-- Presentazione -->
-    <section class="about-section" id="presentazione">
-      <div class="project-head">
-        <h2 class="project-title">Su di me</h2>
-        <div class="project-description">
-          <p>Ciao, sono Eleonora, service e graphic designer. Dopo un percorso universitario in Design e Advanced Design, ho sviluppato un approccio progettuale sistemico, capace di integrare strategia, ricerca e comunicazione.</p>
-          <p>Il service design mi ha insegnato a strutturare sistemi complessi, coordinando competenze interdisciplinari e trasformando bisogni e insight in soluzioni concrete e funzionali.</p>
-          <p>Mi occupo di organizzare processi, definire connessioni e dare coerenza all’intero ecosistema progettuale.</p>
-          <p>La grafica è lo strumento attraverso cui questi sistemi prendono forma e voce. Per me non è solo estetica, ma un mezzo strategico: traduce complessità in messaggi chiari, coinvolgenti e capaci di generare interesse, consapevolezza e dialogo. Progetto esperienze che funzionano, ma soprattutto che comunicano valore.</p>
+    <!-- Presentazione + Le CianoTipe, con le foto nella colonna a sinistra -->
+    <section class="about-section about-intro" id="presentazione">
+
+      <!-- Foto me-1.jpg, me-2.jpg, ... (inserite da script.js) -->
+      <div class="about-photos" aria-label="Foto di Eleonora"></div>
+
+      <div class="about-intro__text">
+        <div class="project-head">
+          <h2 class="project-title">Su di me</h2>
+          <div class="project-description">
+            <p>Ciao, sono Eleonora, service e graphic designer. Dopo un percorso universitario in Design e Advanced Design, ho sviluppato un approccio progettuale sistemico, capace di integrare strategia, ricerca e comunicazione.</p>
+            <p>Il service design mi ha insegnato a strutturare sistemi complessi, coordinando competenze interdisciplinari e trasformando bisogni e insight in soluzioni concrete e funzionali.</p>
+            <p>Mi occupo di organizzare processi, definire connessioni e dare coerenza all’intero ecosistema progettuale.</p>
+            <p>La grafica è lo strumento attraverso cui questi sistemi prendono forma e voce. Per me non è solo estetica, ma un mezzo strategico: traduce complessità in messaggi chiari, coinvolgenti e capaci di generare interesse, consapevolezza e dialogo. Progetto esperienze che funzionano, ma soprattutto che comunicano valore.</p>
+          </div>
+        </div>
+
+        <div class="project-head" id="cianotipe">
+          <h2 class="project-title">Le CianoTipe</h2>
+          <div class="project-description">
+            <p>Durante l’ultimo tirocinio universitario presso il laboratorio artistico culturale Checkpoint Charly, ho conosciuto la cianotipia, una tecnica di stampa a mano che permette di sviluppare fotografie e oggetti con l’ausilio della luce del sole o raggi UV. Con Arianna, appassionata quanto me, abbiamo dunque deciso di far conoscere questa tecnica a più persone possibili, dai bambini agli anziani. Grazie a workshop e piccoli progetti artigianali, stiamo promuovendo in giro per le città, l’idea di manualità come strumento di connessione.</p>
+          </div>
         </div>
       </div>
-
-      <!-- Più avanti: qui si possono aggiungere le foto di Eleonora al lavoro -->
     </section>
 
     <!-- Libri ed editoria -->
@@ -97,10 +108,23 @@
             <p class="book__title">Tatà<span>Valérie Perrin</span></p>
             <div class="book__cover"><img src="img/libro-tata.jpg" alt="" loading="lazy"></div>
           </li>
+          <li class="book">
+            <p class="book__title">L’anno in cui imparai a leggere<span>Marco Marsullo</span></p>
+            <div class="book__cover"><img src="img/libro-lanno-in-cui-imparai-a-leggere.jpg" alt="" loading="lazy"></div>
+          </li>
+          <li class="book">
+            <p class="book__title">Senza coda<span>Marco Missiroli</span></p>
+            <div class="book__cover"><img src="img/libro-senza-coda.jpg" alt="" loading="lazy"></div>
+          </li>
+          <li class="book">
+            <p class="book__title">Tom Lake<span>Ann Patchett</span></p>
+            <div class="book__cover"><img src="img/libro-tom-lake.jpg" alt="" loading="lazy"></div>
+          </li>
         </ul>
       </div>
     </section>
   </main>
 
+  <script src="script.js"></script>
 </body>
 </html>
