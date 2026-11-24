@@ -52,6 +52,8 @@ const VISIBLE_CARDS = 5;
 // imagePrefix: nome delle foto prima del numero, esattamente come si chiamano i file
 //   (es. "legami del futuro" cerca "legami del futuro-1.jpg", "legami del futuro-2.jpg", ...).
 //   Se scrivi più nomi, lo script usa il primo che trova.
+// video: numero del video su Vimeo (quello dopo /video/ nell'indirizzo). Facoltativo.
+// videoTitle: titolo del video (per l'accessibilità). Facoltativo.
 const PROJECTS = [
   {
     id: "gramma",
@@ -64,7 +66,9 @@ const PROJECTS = [
     ],
     summary:
       "Gramma ingaggia i cittadini riminesi attraverso il suono e i partner del progetto, che li invitano a prendere parte ad una cura collettiva, alimentata dal cammino e dall’ascolto attivo, delle specie a rischio che vivono nelle nostre città.",
-    imagePrefix: ["gramma"]
+    imagePrefix: ["gramma"],
+    video: "1249798203",
+    videoTitle: "gramma-video"
   },
   {
     id: "vocabolante",
@@ -87,7 +91,9 @@ const PROJECTS = [
     ],
     summary:
       "La talk prevedeva manifesti informativi sulla biodiversità locale e le sue minacce, accompagnate da una prima attività iniziale: la cianotipia. Il brief progettato prevedeva 4 atti, all’inizio dei quali si coinvolgeva il pubblico con dei brevi e semplici quiz, le cui risposte erano visualizzabili in tempo reale. L’attività finale prevedeva la distribuzione di fogli appartenenti ad una zine, su cui i partecipanti potevano esprimere la loro idea di futuro legata agli ecosistemi terrestri.",
-    imagePrefix: ["the evolution of our ecosystems"]
+    imagePrefix: ["the evolution of our ecosystems"],
+    video: "1249798202",
+    videoTitle: "the evolution of our ecosystems-video"
   },
   {
     id: "arete",
@@ -98,7 +104,9 @@ const PROJECTS = [
     ],
     summary:
       "La piattaforma si suddivide in due modalità: quella per la progettazione, utilizzata dalle organizzazioni prima del festival. Quella dedicata al monitoraggio, invece, sfruttata durante lo svolgimento delle giornate di eventi. Ad ogni partecipante viene distribuito un braccialetto con tecnologia RFID, che raccoglie dati tramite sensori all’interno dei luoghi del festival e li trasmette al database della piattaforma.",
-    imagePrefix: ["aretè", "arete"]
+    imagePrefix: ["aretè", "arete"],
+    video: "1249798204",
+    videoTitle: "aretè-video"
   },
   {
     id: "legami-del-futuro",
@@ -111,7 +119,9 @@ const PROJECTS = [
     ],
     summary:
       "Gli elaborati finali sono due: una vera e propria enciclopedia dei legami, un editoriale che presenta un’accurata ricerca sull’evoluzione passata e futura dei rapporti umani e non, e un sito web dedicato alla data visualization dei dati raccolti riguardanti l’argomento.",
-    imagePrefix: ["legami del futuro"]
+    imagePrefix: ["legami del futuro"],
+    video: "1249798205",
+    videoTitle: "legami del futuro-video"
   }
 ];
 
@@ -268,6 +278,144 @@ function createStack(stackEl, project) {
   return { load };
 }
 
+/* ---------- Video Vimeo (uno per progetto, sotto le foto) ---------- */
+
+// Carica una sola volta la libreria di Vimeo, che permette di far partire
+// e fermare il video e di gestire l'audio.
+let vimeoApiPromise = null;
+function loadVimeoApi() {
+  if (window.Vimeo && window.Vimeo.Player) return Promise.resolve();
+  if (!vimeoApiPromise) {
+    vimeoApiPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://player.vimeo.com/api/player.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  return vimeoApiPromise;
+}
+
+// Video partiti senza audio perché il browser lo ha bloccato.
+// Al primo clic o tasto premuto sulla pagina, l'audio viene attivato.
+const mutedVideos = new Set();
+
+function unlockAudio() {
+  mutedVideos.forEach((video) => video.unmute());
+}
+["pointerdown", "keydown", "touchend"].forEach((type) => {
+  window.addEventListener(type, unlockAudio, { passive: true });
+});
+
+function createVideo(wrapEl, project) {
+  let player = null;
+  let started = false;
+  let button = null;
+
+  const api = {
+    unmute() {
+      if (!player) return;
+      player.setMuted(false)
+        .then(() => player.setVolume(1))
+        .then(() => {
+          mutedVideos.delete(api);
+          if (button) button.hidden = true;
+        })
+        .catch(() => {});
+    }
+  };
+
+  function showUnmuteButton() {
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "video-unmute";
+      button.textContent = "Attiva audio";
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        api.unmute();
+      });
+      wrapEl.appendChild(button);
+    }
+    button.hidden = false;
+  }
+
+  // Parte con l'audio. Se il browser lo blocca, parte comunque senza audio
+  // e compare il tasto "Attiva audio".
+  async function play() {
+    if (!player) return;
+    try {
+      await player.setMuted(false);
+      await player.setVolume(1);
+      await player.play();
+      mutedVideos.delete(api);
+      if (button) button.hidden = true;
+    } catch (err) {
+      try {
+        await player.setMuted(true);
+        await player.play();
+        mutedVideos.add(api);
+        showUnmuteButton();
+      } catch (err2) {
+        /* il browser non permette l'avvio automatico: resta il pulsante play di Vimeo */
+      }
+    }
+  }
+
+  function pause() {
+    if (player) player.pause().catch(() => {});
+  }
+
+  // Crea il video (chiamata quando il progetto sta per entrare nello schermo)
+  function load() {
+    if (started || !project.video) return;
+    started = true;
+
+    const iframe = document.createElement("iframe");
+    iframe.src =
+      `https://player.vimeo.com/video/${project.video}` +
+      "?title=0&byline=0&portrait=0&autopause=0&app_id=58479";
+    iframe.title = project.videoTitle || `${project.name} – video`;
+    iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share");
+    iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+    iframe.setAttribute("allowfullscreen", "");
+    iframe.setAttribute("frameborder", "0");
+    wrapEl.appendChild(iframe);
+
+    loadVimeoApi()
+      .then(() => {
+        player = new Vimeo.Player(iframe);
+        return player.ready();
+      })
+      .then(() => Promise.all([player.getVideoWidth(), player.getVideoHeight()]))
+      .then(([w, h]) => {
+        // Il riquadro prende le proporzioni reali del video
+        if (w && h) wrapEl.style.aspectRatio = `${w} / ${h}`;
+
+        // Parte quando è ben visibile, si ferma quando esce dallo schermo
+        if ("IntersectionObserver" in window) {
+          const watcher = new IntersectionObserver(
+            (entries) => {
+              const ratio = entries[0].intersectionRatio;
+              if (ratio >= 0.6) play();
+              else if (ratio < 0.25) pause();
+            },
+            { threshold: [0, 0.25, 0.6] }
+          );
+          watcher.observe(wrapEl);
+        } else {
+          play();
+        }
+      })
+      .catch(() => {
+        /* se la libreria non si carica, il video resta comunque avviabile a mano */
+      });
+  }
+
+  return { load };
+}
+
 /* ---------- Costruzione di un progetto ---------- */
 
 function buildProject(project) {
@@ -320,7 +468,16 @@ function buildProject(project) {
   stackEl.hidden = true;
   section.appendChild(stackEl);
 
-  return { section, stack: createStack(stackEl, project) };
+  // Video, nella riga sotto le foto (solo per i progetti che ce l'hanno)
+  let video = { load() {} };
+  if (project.video) {
+    const videoEl = document.createElement("div");
+    videoEl.className = "project-video";
+    section.appendChild(videoEl);
+    video = createVideo(videoEl, project);
+  }
+
+  return { section, stack: createStack(stackEl, project), video };
 }
 
 /* ---------- Pagina Progetti ---------- */
@@ -404,7 +561,7 @@ function initProjects(page) {
   );
   window.addEventListener("resize", updateFromScroll);
 
-  // --- Le foto si cercano solo quando il progetto sta per entrare nello schermo ---
+  // --- Foto e video si preparano solo quando il progetto sta per entrare nello schermo ---
   if ("IntersectionObserver" in window) {
     const loader = new IntersectionObserver(
       (entries) => {
@@ -412,6 +569,7 @@ function initProjects(page) {
           if (entry.isIntersecting) {
             const i = sections.indexOf(entry.target);
             built[i].stack.load();
+            built[i].video.load();
             loader.unobserve(entry.target);
           }
         });
@@ -420,7 +578,10 @@ function initProjects(page) {
     );
     sections.forEach((section) => loader.observe(section));
   } else {
-    built.forEach((b) => b.stack.load());
+    built.forEach((b) => {
+      b.stack.load();
+      b.video.load();
+    });
   }
 
   // --- Posizione iniziale: se l'indirizzo contiene #progetto, vai lì ---
