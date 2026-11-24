@@ -218,8 +218,9 @@ a {
 .project-page,
 .about-page {
   --top-space: clamp(5rem, 13vh, 9rem);   /* spazio sopra l'inizio di ogni sezione */
+  --left-space: 41vw;                     /* dove inizia la colonna dei testi */
 
-  padding: var(--top-space) var(--margin) 9rem 41vw;
+  padding: var(--top-space) var(--margin) 9rem var(--left-space);
   font-size: var(--small-size);
   line-height: 1.1;
 }
@@ -309,6 +310,50 @@ a {
 .about-section:last-child {
   margin-bottom: 0;
 }
+
+/* Presentazione: colonna di foto a sinistra, testi a destra.
+   Parte dal margine sinistro della pagina e i testi restano allineati agli altri. */
+.about-intro {
+  display: grid;
+  grid-template-columns: calc(var(--left-space) - var(--margin)) minmax(0, 1fr);
+  margin-left: calc(var(--margin) - var(--left-space));
+  align-items: start;
+}
+
+.about-intro__text .project-head + .project-head {
+  margin-top: 3.2em;
+}
+
+/* Foto sparse che seguono una griglia a 6 colonne */
+.about-photos {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: 2.6rem;
+  align-content: start;
+  padding-right: 2rem;
+}
+
+.about-photo {
+  margin: 0;
+  align-self: start;
+  background: #dcdcdc;                 /* segnaposto finché la foto non è caricata */
+  overflow: hidden;
+}
+
+.about-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Ogni foto occupa colonne diverse, a rotazione: così sembrano sparse ma restano in griglia */
+.about-photo:nth-child(5n + 1) { grid-column: 1 / span 4; }
+.about-photo:nth-child(5n + 2) { grid-column: 3 / span 4; }
+.about-photo:nth-child(5n + 3) { grid-column: 1 / span 3; }
+.about-photo:nth-child(5n + 4) { grid-column: 4 / span 3; margin-top: 3rem; }
+.about-photo:nth-child(5n + 5) { grid-column: 2 / span 4; }
 
 /* Elenco di libri: copertine in miniatura, titolo sopra */
 .book-list {
@@ -457,7 +502,7 @@ a {
 
   .project-page,
   .about-page {
-    padding-left: 38vw;
+    --left-space: 38vw;
   }
 }
 
@@ -512,6 +557,18 @@ a {
 
   .about-section {
     margin-bottom: 4.5rem;
+  }
+
+  /* Su di me: i testi vengono prima, le foto sotto */
+  .about-intro {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+
+  .about-photos {
+    order: 2;
+    margin-top: 3rem;
+    padding-right: 0;
   }
 
   .book-list {
