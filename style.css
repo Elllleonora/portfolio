@@ -354,6 +354,45 @@ a {
   transform: translate(-50%, -50%) rotate(9deg);
 }
 
+/* ---------- Video (nella riga sotto le foto) ---------- */
+.project-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;                /* script.js lo adatta alle proporzioni reali del video */
+  margin-top: 5em;
+  background: #dcdcdc;                 /* segnaposto finché il video non è caricato */
+}
+
+.project-video iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Tasto che compare solo se il browser ha bloccato l'audio automatico */
+.video-unmute {
+  position: absolute;
+  left: 0.8em;
+  bottom: 0.8em;
+  z-index: 2;
+  padding: 0.55em 0.9em;
+  border: 0;
+  border-radius: 2em;
+  background: rgba(17, 17, 17, 0.78);
+  color: #fff;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.video-unmute:hover {
+  color: var(--hover);
+}
+
 /* ---------- Tablet ---------- */
 @media (max-width: 900px) {
   .info {
@@ -409,6 +448,10 @@ a {
 
   .project-summary {
     max-width: 100%;
+  }
+
+  .project-video {
+    margin-top: 3.5em;
   }
 
   .about-section {
