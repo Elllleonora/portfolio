@@ -596,3 +596,36 @@ function initProjects(page) {
 
 const projectPage = document.querySelector(".project-page");
 if (projectPage) initProjects(projectPage);
+
+/* =========================================================
+   SU DI ME: foto me-1, me-2, ... nella colonna a sinistra
+   ========================================================= */
+
+// Nome delle foto prima del numero (me-1.jpg, me-2.jpg, ...).
+const ABOUT_PHOTO_PREFIX = "me";
+
+function initAboutPhotos(container) {
+  collectPhotos(ABOUT_PHOTO_PREFIX).then((found) => {
+    found.forEach((photo, k) => {
+      const figure = document.createElement("figure");
+      figure.className = "about-photo";
+
+      // Ogni foto mantiene il proprio formato, orizzontale o verticale
+      const ratio = photo.w / photo.h;
+      figure.style.aspectRatio = `${photo.w} / ${photo.h}`;
+      figure.classList.add(ratio < 1 ? "is-portrait" : "is-landscape");
+
+      const img = document.createElement("img");
+      img.src = photo.src;
+      img.alt = `Eleonora – foto ${k + 1}`;
+      img.loading = "lazy";
+      img.draggable = false;
+
+      figure.appendChild(img);
+      container.appendChild(figure);
+    });
+  });
+}
+
+const aboutPhotos = document.querySelector(".about-photos");
+if (aboutPhotos) initAboutPhotos(aboutPhotos);
