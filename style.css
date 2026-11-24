@@ -135,15 +135,71 @@ a {
   transition: color 0.2s ease;
 }
 
-.info__block a[href="#"],
-.info__block p a:not([href^="tel"]):not([href^="mailto"]) {
+.info__block a:hover {
+  color: var(--hover);
+}
+
+/* Riconoscimenti: ogni voce è un pulsante sottolineato.
+   Al passaggio del mouse diventa verde e compare la foto. */
+.award + .award {
+  margin-top: 1.1em;
+}
+
+.award__label {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: left;
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.info__block a:hover {
+.award:hover .award__label,
+.award__label:focus-visible {
   color: var(--hover);
+}
+
+.award__link {
+  display: block;
+  margin-top: 0.2em;
+}
+
+/* Foto che compare al centro dello schermo */
+.award__preview {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 30;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.award__preview img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(70vw, 620px);
+  max-height: 70vh;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.award:hover .award__preview,
+.award:focus-within .award__preview {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Animazione di comparsa (attivata da script.js) */
@@ -461,6 +517,11 @@ a {
   .book-list {
     grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
   }
+
+  .award__preview img {
+    max-width: 86vw;
+    max-height: 60vh;
+  }
 }
 
 /* ---------- Accessibilità ---------- */
@@ -468,4 +529,5 @@ a {
   html { scroll-behavior: auto; }
   .js .info__col { transition: none; opacity: 1; transform: none; }
   .stack__card { transition: none; }
+  .award__preview { transition: none; }
 }
