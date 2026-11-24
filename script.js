@@ -36,11 +36,14 @@ if (cols.length) {
 // Nome della cartella su GitHub dove carichi le foto.
 const IMG_FOLDER = "img";
 
-// Estensioni provate in automatico per ogni foto.
-const EXTENSIONS = ["jpg", "JPG", "jpeg", "png", "webp"];
+// Estensioni provate in automatico per ogni foto (le GIF restano animate).
+const EXTENSIONS = ["jpg", "JPG", "jpeg", "png", "webp", "gif", "GIF"];
 
 // Numero massimo di foto cercate per progetto.
 const MAX_PHOTOS = 40;
+
+// Quanti numeri mancanti di fila sono ammessi prima di smettere di cercare.
+const MAX_MISSES = 3;
 
 // Quante foto restano visibili nella pila
 const VISIBLE_CARDS = 5;
@@ -166,12 +169,12 @@ async function findPhoto(prefix, number) {
 }
 
 // Trova le foto di un prefisso: prefisso-1, prefisso-2, ...
-// Si ferma dopo 2 numeri consecutivi mancanti.
+// Si ferma dopo MAX_MISSES numeri consecutivi mancanti.
 async function collectPhotos(prefix) {
   const found = [];
   let misses = 0;
 
-  for (let n = 1; n <= MAX_PHOTOS && misses < 2; n++) {
+  for (let n = 1; n <= MAX_PHOTOS && misses < MAX_MISSES; n++) {
     const photo = await findPhoto(prefix, n);
     if (photo) {
       found.push(photo);
