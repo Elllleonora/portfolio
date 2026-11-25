@@ -314,60 +314,111 @@ function unlockAudio() {
 function createVideo(wrapEl, project) {
   let player = null;
   let started = false;
-  let button = null;
+  let userPaused = false;   // true se chi visita ha messo in pausa: non riparte da solo
+  let wantsMuted = false;   // true se chi visita ha spento l'audio: resta spento
+  let playBtn = null;
+  let muteBtn = null;
 
   const api = {
+    // Attiva l'audio (usato al primo clic sulla pagina, se il browser lo aveva bloccato)
     unmute() {
-      if (!player) return;
+      if (!player || wantsMuted) return;
       player.setMuted(false)
         .then(() => player.setVolume(1))
-        .then(() => {
-          mutedVideos.delete(api);
-          if (button) button.hidden = true;
-        })
+        .then(refresh)
         .catch(() => {});
     }
   };
 
-  function showUnmuteButton() {
-    if (!button) {
-      button = document.createElement("button");
-      button.type = "button";
-      button.className = "video-unmute";
-      button.textContent = "Attiva audio";
-      button.addEventListener("click", (e) => {
-        e.stopPropagation();
-        api.unmute();
-      });
-      wrapEl.appendChild(button);
-    }
-    button.hidden = false;
+  // Aggiorna le scritte dei due tasti in base allo stato reale del video
+  function refresh() {
+    if (!player || !playBtn) return;
+    Promise.all([player.getPaused(), player.getMuted()])
+      .then(([paused, muted]) => {
+        playBtn.textContent = paused ? "Play" : "Pausa";
+        muteBtn.textContent = muted ? "Attiva audio" : "Disattiva audio";
+        if (muted) mutedVideos.add(api);
+        else mutedVideos.delete(api);
+      })
+      .catch(() => {});
   }
 
-  // Parte con l'audio. Se il browser lo blocca, parte comunque senza audio
-  // e compare il tasto "Attiva audio".
+  // Fa partire il video, con l'audio se il browser lo permette.
   async function play() {
     if (!player) return;
+
+    if (wantsMuted) {
+      try { await player.setMuted(true); await player.play(); } catch (err) { /* ignora */ }
+      return;
+    }
+
     try {
       await player.setMuted(false);
       await player.setVolume(1);
       await player.play();
-      mutedVideos.delete(api);
-      if (button) button.hidden = true;
     } catch (err) {
+      // Il browser blocca l'audio automatico: parte senza audio,
+      // e si attiva al primo clic sulla pagina o col tasto "Attiva audio".
       try {
         await player.setMuted(true);
         await player.play();
-        mutedVideos.add(api);
-        showUnmuteButton();
       } catch (err2) {
-        /* il browser non permette l'avvio automatico: resta il pulsante play di Vimeo */
+        /* il browser non permette l'avvio automatico: resta il tasto Play */
       }
     }
   }
 
   function pause() {
     if (player) player.pause().catch(() => {});
+  }
+
+  function togglePlay() {
+    if (!player) return;
+    player.getPaused().then((paused) => {
+      if (paused) {
+        userPaused = false;
+        play();
+      } else {
+        userPaused = true;
+        pause();
+      }
+    });
+  }
+
+  function toggleMute() {
+    if (!player) return;
+    player.getMuted().then((muted) => {
+      wantsMuted = !muted;
+      return player.setMuted(!muted).then(() => (muted ? player.setVolume(1) : null));
+    }).then(refresh).catch(() => {});
+  }
+
+  // Crea i due tasti: Play/Pausa e Audio
+  function buildControls() {
+    const bar = document.createElement("div");
+    bar.className = "video-controls";
+
+    playBtn = document.createElement("button");
+    playBtn.type = "button";
+    playBtn.textContent = "Pausa";
+    playBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePlay();
+    });
+
+    muteBtn = document.createElement("button");
+    muteBtn.type = "button";
+    muteBtn.textContent = "Attiva audio";
+    muteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMute();
+    });
+
+    bar.append(playBtn, muteBtn);
+    wrapEl.appendChild(bar);
+
+    // Un clic sul video vale come play/pausa
+    wrapEl.addEventListener("click", togglePlay);
   }
 
   // Crea il video (chiamata quando il progetto sta per entrare nello schermo)
@@ -378,7 +429,7 @@ function createVideo(wrapEl, project) {
     const iframe = document.createElement("iframe");
     iframe.src =
       `https://player.vimeo.com/video/${project.video}` +
-      "?title=0&byline=0&portrait=0&autopause=0&app_id=58479";
+      "?title=0&byline=0&portrait=0&autopause=0&controls=0&app_id=58479";
     iframe.title = project.videoTitle || `${project.name} – video`;
     iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share");
     iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
@@ -396,13 +447,22 @@ function createVideo(wrapEl, project) {
         // Il riquadro prende le proporzioni reali del video
         if (w && h) wrapEl.style.aspectRatio = `${w} / ${h}`;
 
+        buildControls();
+        player.on("play", refresh);
+        player.on("pause", refresh);
+        player.on("volumechange", refresh);
+        refresh();
+
         // Parte quando è ben visibile, si ferma quando esce dallo schermo
         if ("IntersectionObserver" in window) {
           const watcher = new IntersectionObserver(
             (entries) => {
               const ratio = entries[0].intersectionRatio;
-              if (ratio >= 0.6) play();
-              else if (ratio < 0.25) pause();
+              if (ratio >= 0.6) {
+                if (!userPaused) play();
+              } else if (ratio < 0.25) {
+                pause();
+              }
             },
             { threshold: [0, 0.25, 0.6] }
           );
@@ -412,7 +472,7 @@ function createVideo(wrapEl, project) {
         }
       })
       .catch(() => {
-        /* se la libreria non si carica, il video resta comunque avviabile a mano */
+        /* se la libreria non si carica, il video non parte */
       });
   }
 
@@ -601,14 +661,17 @@ const projectPage = document.querySelector(".project-page");
 if (projectPage) initProjects(projectPage);
 
 /* =========================================================
-   SU DI ME: foto me-1, me-2, ... nella colonna a sinistra
+   SU DI ME: colonne di foto accanto ai paragrafi
+   Ogni colonna è un <div class="about-photos" data-prefix="..."> e cerca
+   le foto prefisso-1, prefisso-2, ... (es. me-1.jpg, fotografia-1.jpg).
    ========================================================= */
 
-// Nome delle foto prima del numero (me-1.jpg, me-2.jpg, ...).
-const ABOUT_PHOTO_PREFIX = "me";
-
 function initAboutPhotos(container) {
-  collectPhotos(ABOUT_PHOTO_PREFIX).then((found) => {
+  const prefix = container.dataset.prefix;
+  const altText = container.dataset.alt || "Foto";
+  if (!prefix) return;
+
+  collectPhotos(prefix).then((found) => {
     found.forEach((photo, k) => {
       const figure = document.createElement("figure");
       figure.className = "about-photo";
@@ -620,7 +683,7 @@ function initAboutPhotos(container) {
 
       const img = document.createElement("img");
       img.src = photo.src;
-      img.alt = `Eleonora – foto ${k + 1}`;
+      img.alt = `${altText} – ${k + 1}`;
       img.loading = "lazy";
       img.draggable = false;
 
@@ -630,5 +693,4 @@ function initAboutPhotos(container) {
   });
 }
 
-const aboutPhotos = document.querySelector(".about-photos");
-if (aboutPhotos) initAboutPhotos(aboutPhotos);
+document.querySelectorAll(".about-photos").forEach(initAboutPhotos);
