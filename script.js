@@ -39,6 +39,10 @@ const IMG_FOLDER = "img";
 // Estensioni provate in automatico per ogni foto (le GIF restano animate).
 const EXTENSIONS = ["jpg", "JPG", "jpeg", "png", "webp", "gif", "GIF"];
 
+// Le foto si cercano partendo da questo numero: con 0, una foto chiamata
+// "gramma-0.gif" compare per prima, prima di "gramma-1.jpg".
+const FIRST_PHOTO = 0;
+
 // Numero massimo di foto cercate per progetto.
 const MAX_PHOTOS = 40;
 
@@ -53,7 +57,7 @@ const VISIBLE_CARDS = 5;
 // description: paragrafi del testo nero.
 // summary: testo grigio sotto la descrizione.
 // imagePrefix: nome delle foto prima del numero, esattamente come si chiamano i file
-//   (es. "legami del futuro" cerca "legami del futuro-1.jpg", "legami del futuro-2.jpg", ...).
+//   (es. "legami del futuro" cerca "legami del futuro-0.gif", "legami del futuro-1.jpg", ...).
 //   Se scrivi più nomi, lo script usa il primo che trova.
 // video: numero del video su Vimeo (quello dopo /video/ nell'indirizzo). Facoltativo.
 // videoTitle: titolo del video (per l'accessibilità). Facoltativo.
@@ -168,13 +172,13 @@ async function findPhoto(prefix, number) {
   return firstLoaded(sources);
 }
 
-// Trova le foto di un prefisso: prefisso-1, prefisso-2, ...
+// Trova le foto di un prefisso: prefisso-0, prefisso-1, prefisso-2, ...
 // Si ferma dopo MAX_MISSES numeri consecutivi mancanti.
 async function collectPhotos(prefix) {
   const found = [];
   let misses = 0;
 
-  for (let n = 1; n <= MAX_PHOTOS && misses < MAX_MISSES; n++) {
+  for (let n = FIRST_PHOTO; n <= MAX_PHOTOS && misses < MAX_MISSES; n++) {
     const photo = await findPhoto(prefix, n);
     if (photo) {
       found.push(photo);
@@ -663,7 +667,7 @@ if (projectPage) initProjects(projectPage);
 /* =========================================================
    SU DI ME: colonne di foto accanto ai paragrafi
    Ogni colonna è un <div class="about-photos" data-prefix="..."> e cerca
-   le foto prefisso-1, prefisso-2, ... (es. me-1.jpg, fotografia-1.jpg).
+   le foto prefisso-0, prefisso-1, prefisso-2, ... (es. me-1.jpg, fotografia-1.jpg).
    ========================================================= */
 
 function initAboutPhotos(container) {
